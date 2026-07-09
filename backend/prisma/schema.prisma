@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id        String     @id @default(uuid())
+  name      String
+  rif       String     @unique // Venezuelan RIF (e.g. J-12345678-9)
+  plan      String     @default("BASIC") // e.g. BASIC, PREMIUM, ENTERPRISE
+  status    String     @default("ACTIVE") // ACTIVE, SUSPENDED, INACTIVE
+  expiresAt DateTime?  @map("expires_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  
+  users     User[]
+  companies Company[]
+  usageLogs UsageLog[]
+  roles     Role[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String // Hashed password
+  name      String
+  status       String   @default("ACTIVE") // ACTIVE, INACTIVE
+  isSuperAdmin Boolean  @default(false) @map("is_super_admin")
+  tenantId     String   @map("tenant_id")
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleId    String   @map("role_id")
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Company {
+  id             String              @id @default(uuid())
+  name           String
+  rif            String              @unique // Venezuelan RIF (e.g. J-12345678-9)
+  status         String              @default("ACTIVE") // ACTIVE, INACTIVE
+  tenantId       String              @map("tenant_id")
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accounts       AccountingAccount[]
+  journalEntries JournalEntry[]
+  taxDocuments   TaxDocument[]
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  @@map("companies")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String // e.g. Admin, Contador, Auxiliar
+  tenantId    String           @map("tenant_id")
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@unique([tenantId, name])
+  @@map("roles")
+}
+
+model Permission {
+  id          String               @id @default(uuid())
+  name        String               @unique // e.g. txt:generate, retention:create, invoice:read
+  description String?
+  roles       RolePermission[]
+  menuItems   MenuItemPermission[]
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Menu {
+  id          String     @id @default(uuid())
+  name        String     @unique // e.g. "Main Sidebar", "Admin Settings"
+  description String?
+  items       MenuItem[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@map("menus")
+}
+
+model MenuItem {
+  id          String               @id @default(uuid())
+  title       String
+  path        String? // Next.js route path (e.g. "/retenciones/iva")
+  icon        String? // Icon string identifier (e.g. "file-text")
+  order       Int                  @default(0)
+  menuId      String               @map("menu_id")
+  menu        Menu                 @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parentId    String?              @map("parent_id")
+  parent      MenuItem?            @relation("MenuItemHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    MenuItem[]           @relation("MenuItemHierarchy")
+  permissions MenuItemPermission[]
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  @@map("menu_items")
+}
+
+model MenuItemPermission {
+  menuItemId   String     @map("menu_item_id")
+  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, permissionId])
+  @@map("menu_item_permissions")
+}
+
+model UsageLog {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  action    String // e.g. EMISION_RETENCION, GENERACION_TXT
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("usage_logs")
+}
+
+model AccountingAccount {
+  id              String              @id @default(uuid())
+  code            String // e.g. "1.1.01.01.001"
+  name            String // e.g. "Caja Principal"
+  type            String // e.g. "ACTIVO", "PASIVO", "PATRIMONIO", "INGRESO", "COSTO", "GASTO", "CUENTAS_DE_ORDEN"
+  level           Int // e.g. 1, 2, 3, 4, 5
+  isTransactional Boolean             @default(true) @map("is_transactional") // If true, can have journal entries
+  parentId        String?             @map("parent_id")
+  parent          AccountingAccount?  @relation("AccountHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children        AccountingAccount[] @relation("AccountHierarchy")
+  lines           JournalEntryLine[]
+  companyId       String              @map("company_id")
+  company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tenantId        String              @map("tenant_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([tenantId])
+  @@map("accounting_accounts")
+}
+
+model JournalEntry {
+  id           String             @id @default(uuid())
+  number       Int // Sequential entry number per company
+  date         DateTime
+  description  String // Concepto / Glosa
+  reference    String? // Document reference
+  status       String             @default("POSTED") // DRAFT, POSTED
+  companyId    String             @map("company_id")
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tenantId     String             @map("tenant_id")
+  lines        JournalEntryLine[]
+  taxDocuments TaxDocument[]
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  @@unique([companyId, number])
+  @@index([companyId])
+  @@index([tenantId])
+  @@map("journal_entries")
+}
+
+model JournalEntryLine {
+  id          String            @id @default(uuid())
+  entryId     String            @map("entry_id")
+  entry       JournalEntry      @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  accountId   String            @map("account_id")
+  account     AccountingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  debit       Decimal           @default(0) @db.Decimal(18, 2)
+  credit      Decimal           @default(0) @db.Decimal(18, 2)
+  description String? // Line concept if different
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  @@index([entryId])
+  @@index([accountId])
+  @@map("journal_entry_lines")
+}
+
+model TaxDocument {
+  id                     String        @id @default(uuid())
+  type                   String // COMPRA, VENTA
+  documentType           String // FACTURA, NOTA_DEBITO, NOTA_CREDITO
+  invoiceNumber          String        @map("invoice_number")
+  controlNumber          String        @map("control_number") // Mandatory in Venezuela
+  rif                    String // Client/Provider RIF (e.g. J-12345678-9)
+  name                   String // Client/Provider name
+  date                   DateTime
+  subtotal               Decimal       @db.Decimal(18, 2) // Taxable base
+  ivaRate                Decimal       @default(16.00) @map("iva_rate") @db.Decimal(5, 2) // 16%, 8%, 0%
+  ivaAmount              Decimal       @map("iva_amount") @db.Decimal(18, 2) // Calculated VAT
+  total                  Decimal       @db.Decimal(18, 2) // Total invoice
+  ivaWithholdingRate     Decimal?      @map("iva_withholding_rate") @db.Decimal(5, 2) // e.g. 75% or 100%
+  ivaWithheld            Decimal?      @map("iva_withheld") @db.Decimal(18, 2) // VAT withheld
+  retentionVoucherNumber String?       @map("retention_voucher_number") // Voucher number
+  retentionDate          DateTime?     @map("retention_date")
+  islrWithholdingRate    Decimal?      @map("islr_withholding_rate") @db.Decimal(5, 2) // e.g. 1%, 2%
+  islrWithheld           Decimal?      @map("islr_withheld") @db.Decimal(18, 2) // ISLR withheld
+  companyId              String        @map("company_id")
+  company                Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tenantId               String        @map("tenant_id")
+  journalEntryId         String?       @map("journal_entry_id")
+  journalEntry           JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  createdAt              DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([tenantId])
+  @@index([journalEntryId])
+  @@map("tax_documents")
+}
