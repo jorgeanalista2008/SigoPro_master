@@ -83,10 +83,11 @@ Una vez que el servidor esté encendido, navega a:
 
 | Usuario / Rol | Correo Electrónico | Contraseña | Super Admin | Tenant Asociado | Escenario Contratación |
 | :--- | :--- | :--- | :---: | :--- | :--- |
-| **Super Administrador** | `admin@demo.com` | `AdminPass123!` | **Sí** | CC Venezolano | Control de todos los Tenants |
-| **Contador Senior** | `contador@demo.com` | `Contador123!` | No | CC Venezolano | Membresía activa por 1 año |
-| **Auxiliar Contable** | `auxiliar@demo.com` | `Auxiliar123!` | No | CC Venezolano | Permisos reducidos de visualización |
-| **Dueño de Ferretería** | `tornillo@demo.com` | `Tornillo123!` | No | Ferretería El Tornillo | Membresía activa por 6 meses |
+| **Super Administrador** | `admin@demo.com` | `AdminPass123!` | **Sí** | SaaS Owner | Control global de todos los Tenants |
+| **Firma Admin (CCV)** | `firma1@demo.com` | `FirmaPass123!` | No | CC Venezolano | Administrador del primer Tenant |
+| **Contador Asistente** | `contador@demo.com` | `Contador123!` | No | CC Venezolano | Asistente de firma (Escritura/Lectura) |
+| **Contador Asistente (Aux)** | `auxiliar@demo.com` | `Auxiliar123!` | No | CC Venezolano | Segundo asistente (Escritura/Lectura) |
+| **Dueño de Ferretería** | `tornillo@demo.com` | `Tornillo123!` | No | Ferretería El Tornillo | Administrador de Firma / Activo |
 | **Suscripción Vencida** | `caducado@demo.com` | `Caducado123!` | No | Inversiones El Caducado | **Vencido hace 5 días** (Bloqueo fiscal) |
 | **Vencimiento Próximo** | `vencimiento@demo.com` | `Vencimiento123!` | No | Bodega El Vencimiento | **Vence en 3 días** (Alerta de cobro) |
 | **Suscripción Suspendida**| `bloqueado@demo.com` | `Bloqueado123!` | No | Constructora El Bloqueado | **Suspendida manualmente** |

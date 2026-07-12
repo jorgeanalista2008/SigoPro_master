@@ -1,0 +1,42 @@
+1. En tu computadora local (Desarrollo)
+Haces tus cambios, haces commit y los subes a GitHub:
+
+bash
+
+
+git add .
+git commit -m "Descripción del cambio"
+git push origin main
+2. En la terminal de tu VPS (Producción)
+Te conectas por SSH, vas a la carpeta del proyecto y descargas los cambios de GitHub:
+
+bash
+
+
+cd /var/www/sigopro
+git pull
+3. Aplicar y reiniciar los servicios en el VPS
+Dependiendo de qué hayas cambiado, ejecutas los comandos correspondientes:
+
+Si cambiaste algo del Backend:
+
+bash
+
+
+# Si agregaste nuevos paquetes (en package.json):
+npm run install-deps
+# Si cambiaste la base de datos (schema.prisma):
+cd backend && npx prisma generate && npx prisma migrate deploy && cd ..
+# Compilar de nuevo el backend
+cd backend && npm run build && cd ..
+# Reiniciar el proceso en PM2
+pm2 restart sigopro-backend
+Si cambiaste algo del Frontend:
+
+bash
+
+
+# Compilar de nuevo el frontend (Next.js necesita volver a generar las páginas estáticas)
+cd frontend && npm run build && cd ..
+# Reiniciar el proceso en PM2
+pm2 restart sigopro-frontend

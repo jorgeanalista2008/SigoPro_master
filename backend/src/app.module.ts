@@ -1,22 +1,26 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module';
-import { MenuModule } from './menu/menu.module';
-import { TenantModule } from './tenant/tenant.module';
-import { CompanyModule } from './company/company.module';
-import { UserModule } from './user/user.module';
-import { RoleModule } from './role/role.module';
-import { AccountingModule } from './accounting/accounting.module';
-import { FiscalModule } from './fiscal/fiscal.module';
-import { SuperAdminModule } from './super-admin/super-admin.module';
-import { ReportsModule } from './reports/reports.module';
+import { PrismaModule } from './shared/prisma/prisma.module';
+import { AuthModule } from './identity/auth/auth.module';
+import { MenuModule } from './core/menu/menu.module';
+import { TenantModule } from './core/tenant/tenant.module';
+import { CompanyModule } from './tenant-scoped/company/company.module';
+import { UserModule } from './identity/user/user.module';
+import { RoleModule } from './identity/role/role.module';
+import { AccountingModule } from './company-scoped/accounting/accounting.module';
+import { FiscalModule } from './company-scoped/fiscal/fiscal.module';
+import { SuperAdminModule } from './core/super-admin/super-admin.module';
+import { ReportsModule } from './company-scoped/reports/reports.module';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { TenantMiddleware } from './shared/common/tenant-context/tenant.middleware';
+import { I18nModule } from './shared/i18n/i18n.module';
+import { I18nExceptionFilter } from './shared/i18n/i18n-exception.filter';
 
 @Module({
   imports: [
+    I18nModule,
     PrismaModule,
     AuthModule,
     MenuModule,
@@ -40,6 +44,17 @@ import { APP_GUARD } from '@nestjs/core';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    {
+      provide: APP_FILTER,
+      useClass: I18nExceptionFilter,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(TenantMiddleware)
+      .forRoutes('*');
+  }
+}
+

@@ -20,6 +20,7 @@ model Tenant {
   companies Company[]
   usageLogs UsageLog[]
   roles     Role[]
+  auditLogs AuditLog[]
 
   @@map("tenants")
 }
@@ -37,6 +38,7 @@ model User {
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  auditLogs AuditLog[]
 
   @@map("users")
 }
@@ -53,6 +55,7 @@ model Company {
   taxDocuments   TaxDocument[]
   createdAt      DateTime            @default(now()) @map("created_at")
   updatedAt      DateTime            @updatedAt @map("updated_at")
+  auditLogs      AuditLog[]
 
   @@map("companies")
 }
@@ -236,4 +239,26 @@ model TaxDocument {
   @@index([tenantId])
   @@index([journalEntryId])
   @@map("tax_documents")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  companyId String?  @map("company_id")
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  action    String   // e.g. "CREATE_JOURNAL_ENTRY", "UPDATE_COMPANY", "LOGIN_SUCCESS"
+  entity    String   // e.g. "JournalEntry", "Company", "Auth"
+  metadata  Json?    // Complementary details
+  ipAddress String   @map("ip_address")
+  userAgent String   @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([userId])
+  @@map("audit_logs")
 }

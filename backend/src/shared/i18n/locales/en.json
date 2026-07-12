@@ -1,0 +1,6 @@
+{
+  "FORBIDDEN_RESOURCE": "You do not have sufficient permissions to perform this action",
+  "RESOURCE_NOT_FOUND": "The specified resource does not exist or was not found",
+  "DUPLICATE_RESOURCE": "A record with this identifier or name already exists",
+  "INVALID_INPUT": "The provided data is invalid"
+}

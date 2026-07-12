@@ -24,7 +24,10 @@ const defineRulesFor = (role: string, subject: string) => {
   if (
     lowerRole === 'admin' ||
     lowerRole === 'administrador' ||
-    lowerRole === 'super administrador'
+    lowerRole === 'super administrador' ||
+    lowerRole === 'administrador de firma' ||
+    lowerRole === 'contador asistente' ||
+    lowerRole === 'contador'
   ) {
     can('manage', 'all')
   } else if (lowerRole === 'client') {

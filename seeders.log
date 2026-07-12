@@ -1,0 +1,19 @@
+🏢 Tenant Raíz (Plataforma): SigoPro Plataforma (SaaS Owner - Activo - ID: SaaS_Owner)
+Rol	Usuario	Correo (Email)	Contraseña (Password)	Estado / Características
+Super Administrador	Jorge Analista (Super Admin)	admin@demo.com	AdminPass123!	Acceso total global a todo el sistema (SuperAdmin)
+
+🏢 Tenant Cliente 1 (Firma): Consorcio Contable Venezolano, C.A. (Plan Enterprise - Activo)
+Rol	Usuario	Correo (Email)	Contraseña (Password)	Estado / Características
+Administrador de Firma	Jorge Flores (Firma Admin)	firma1@demo.com	FirmaPass123!	Acceso completo administrativo a su Tenant
+Contador Asistente	Carlos Mendoza (Contador)	contador@demo.com	Contador123!	Permisos de lectura/escritura en facturas, retenciones y contabilidad
+Contador Asistente	María Delgado (Auxiliar)	auxiliar@demo.com	Auxiliar123!	Asignado al rol Contador Asistente (Permisos intermedios)
+
+🛡️ Otros Tenants Clientes para Pruebas de Escenarios Especiales
+Si deseas probar cómo se comporta la aplicación con diferentes planes, estados de suscripción o límites, puedes usar estos usuarios adicionales (todos creados como Administrador de Firma en sus respectivos Tenants):
+
+Tenant / Empresa	Correo (Email)	Contraseña (Password)	Plan / Estado del Tenant
+Ferretería El Tornillo, C.A.	tornillo@demo.com	Tornillo123!	Plan BASIC (Activo)
+Inversiones El Caducado, C.A.	caducado@demo.com	Caducado123!	Suscripción VENCIDA / Expirada
+Bodega El Vencimiento, C.A.	vencimiento@demo.com	Vencimiento123!	Suscripción por vencer (en menos de 3 días)
+Constructora El Bloqueado, C.A.	bloqueado@demo.com	Bloqueado123!	Tenant SUSPENDIDO
+Tecnología Avanzada Antigravity	antigravity@demo.com	Antigravity123!	Plan ENTERPRISE (Activo)

@@ -1,0 +1,6 @@
+{
+  "FORBIDDEN_RESOURCE": "No tienes permisos suficientes para realizar esta acción",
+  "RESOURCE_NOT_FOUND": "El recurso especificado no existe o no fue encontrado",
+  "DUPLICATE_RESOURCE": "Ya existe un registro con este identificador o nombre",
+  "INVALID_INPUT": "Los datos proporcionados no son válidos"
+}

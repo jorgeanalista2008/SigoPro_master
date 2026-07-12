@@ -337,7 +337,48 @@ async function main() {
 
   console.log('✅ Created menu items tree with permission mappings');
 
-  // 5. Create Default Tenant
+  // 5. Create Root Tenant (SaaS Owner)
+  const rootTenant = await prisma.tenant.create({
+    data: {
+      id: 'SaaS_Owner',
+      name: 'SigoPro Plataforma (SaaS Owner)',
+      rif: 'J-00000000-0',
+      plan: 'ROOT',
+      status: 'ACTIVE',
+    },
+  });
+  console.log(`✅ Created Root Tenant: ${rootTenant.name} (${rootTenant.id})`);
+
+  const saltRounds = 10;
+
+  // Create Super Admin Role for Root Tenant
+  const superAdminRole = await prisma.role.create({
+    data: {
+      name: 'Super Administrador',
+      tenantId: rootTenant.id,
+      permissions: {
+        create: Object.keys(permissions).map((key) => ({
+          permissionId: permissions[key].id,
+        })),
+      },
+    },
+  });
+
+  // Create Super Admin User under Root Tenant
+  const superAdminUser = await prisma.user.create({
+    data: {
+      name: 'Jorge Analista (Super Admin)',
+      email: 'admin@demo.com',
+      password: await bcrypt.hash('AdminPass123!', saltRounds),
+      tenantId: rootTenant.id,
+      roleId: superAdminRole.id,
+      status: 'ACTIVE',
+      isSuperAdmin: true,
+    },
+  });
+  console.log(`✅ Created Super Admin User: ${superAdminUser.email} (password: AdminPass123!)`);
+
+  // 6. Create Default Client Tenant 1
   const oneYearFromNow = new Date();
   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
@@ -350,12 +391,12 @@ async function main() {
       expiresAt: oneYearFromNow,
     },
   });
-  console.log(`✅ Created Tenant: ${tenant.name} (${tenant.rif})`);
+  console.log(`✅ Created Client Tenant 1: ${tenant.name} (${tenant.rif})`);
 
-  // 6. Create Default Roles for the Tenant
+  // 7. Create Default Roles for the Client Tenant
   const adminRole = await prisma.role.create({
     data: {
-      name: 'Administrador',
+      name: 'Administrador de Firma',
       tenantId: tenant.id,
       permissions: {
         create: Object.keys(permissions).map((key) => ({
@@ -367,7 +408,7 @@ async function main() {
 
   const contadorRole = await prisma.role.create({
     data: {
-      name: 'Contador',
+      name: 'Contador Asistente',
       tenantId: tenant.id,
       permissions: {
         create: [
@@ -383,24 +424,9 @@ async function main() {
       },
     },
   });
+  console.log('✅ Created Client Tenant Roles (Administrador de Firma, Contador Asistente)');
 
-  const auxiliarRole = await prisma.role.create({
-    data: {
-      name: 'Auxiliar Contable',
-      tenantId: tenant.id,
-      permissions: {
-        create: [
-          { permissionId: permissions['company:read'].id },
-          { permissionId: permissions['invoice:read'].id },
-          { permissionId: permissions['retention:read'].id },
-          { permissionId: permissions['accounting:read'].id },
-        ],
-      },
-    },
-  });
-  console.log('✅ Created Tenant Roles (Administrador, Contador, Auxiliar Contable)');
-
-  // 7. Create Default Company under Tenant
+  // 8. Create Default Company under Client Tenant
   const company = await prisma.company.create({
     data: {
       name: 'Inversiones Polar, C.A.',
@@ -411,18 +437,16 @@ async function main() {
   });
   console.log(`✅ Created Company: ${company.name} (${company.rif})`);
 
-  // 8. Create Default Users under Tenant
-  const saltRounds = 10;
-  
-  const adminUser = await prisma.user.create({
+  // 9. Create Default Users under Client Tenant
+  const adminFirmaUser = await prisma.user.create({
     data: {
-      name: 'Jorge Analista (Admin)',
-      email: 'admin@demo.com',
-      password: await bcrypt.hash('AdminPass123!', saltRounds),
+      name: 'Jorge Flores (Firma Admin)',
+      email: 'firma1@demo.com',
+      password: await bcrypt.hash('FirmaPass123!', saltRounds),
       tenantId: tenant.id,
       roleId: adminRole.id,
       status: 'ACTIVE',
-      isSuperAdmin: true, // System Super Admin
+      isSuperAdmin: false,
     },
   });
 
@@ -443,14 +467,14 @@ async function main() {
       email: 'auxiliar@demo.com',
       password: await bcrypt.hash('Auxiliar123!', saltRounds),
       tenantId: tenant.id,
-      roleId: auxiliarRole.id,
+      roleId: contadorRole.id,
       status: 'ACTIVE',
     },
   });
 
   console.log('✅ Created Users for Tenant 1:');
-  console.log(`   - Super Admin (Admin): ${adminUser.email} (password: AdminPass123!)`);
-  console.log(`   - Contador: ${contadorUser.email} (password: Contador123!)`);
+  console.log(`   - Firma Admin: ${adminFirmaUser.email} (password: FirmaPass123!)`);
+  console.log(`   - Contador Asistente: ${contadorUser.email} (password: Contador123!)`);
   console.log(`   - Auxiliar: ${auxiliarUser.email} (password: Auxiliar123!)`);
 
   // --- SEEDING SECOND TENANT ---
@@ -470,7 +494,7 @@ async function main() {
 
   const adminRoleTenant2 = await prisma.role.create({
     data: {
-      name: 'Administrador',
+      name: 'Administrador de Firma',
       tenantId: tenant2.id,
       permissions: {
         create: Object.keys(permissions).map((key) => ({
@@ -520,7 +544,7 @@ async function main() {
 
   const adminRoleTenant3 = await prisma.role.create({
     data: {
-      name: 'Administrador',
+      name: 'Administrador de Firma',
       tenantId: tenant3.id,
       permissions: {
         create: Object.keys(permissions).map((key) => ({
@@ -571,7 +595,7 @@ async function main() {
 
   const adminRoleTenant4 = await prisma.role.create({
     data: {
-      name: 'Administrador',
+      name: 'Administrador de Firma',
       tenantId: tenant4.id,
       permissions: {
         create: Object.keys(permissions).map((key) => ({
@@ -619,7 +643,7 @@ async function main() {
 
   const adminRoleTenant5 = await prisma.role.create({
     data: {
-      name: 'Administrador',
+      name: 'Administrador de Firma',
       tenantId: tenant5.id,
       permissions: {
         create: Object.keys(permissions).map((key) => ({
@@ -670,7 +694,7 @@ async function main() {
 
   const adminRoleTenant6 = await prisma.role.create({
     data: {
-      name: 'Administrador',
+      name: 'Administrador de Firma',
       tenantId: tenant6.id,
       permissions: {
         create: Object.keys(permissions).map((key) => ({
